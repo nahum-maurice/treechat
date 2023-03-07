@@ -72,6 +72,7 @@ func (s *Server) acceptLoop() {
 				"........       /rooms                         --> Show the list of all rooms.\n" +
 				"........       /join <room>                   --> Join a room.\n" +
 				"........       /newroom <room>                --> Create a new room.\n" +
+				"........       /online                        --> Show the people that are online in a room." +
 				"........       /quit                          --> Quit the server.\n\n"))
 
 		// Start the reading loop. This loop is responsible to listen
