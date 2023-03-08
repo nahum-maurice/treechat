@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 )
 
 func main() {
-	server := NewServer(":3000")
+	PORT := os.Getenv("PORT")
+	fmt.Printf("The current port is %v", PORT)
+	address := fmt.Sprintf("0.0.0.0:%v", PORT)
+	server := NewServer(address)
 
 	// Listening to incomming messages with a coroutine and sending messages
 	// to the resepctive room using a custom goroutine.

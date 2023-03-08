@@ -30,7 +30,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	fmt.Println("The server is up running!")
+	fmt.Printf("Treechat server up and running on address: %v\n\n", s.Address)
 
 	// When terminating, please, close the listener
 	defer listener.Close()
