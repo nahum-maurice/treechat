@@ -8,7 +8,6 @@ import (
 
 func main() {
 	PORT := os.Getenv("PORT")
-	fmt.Printf("The current port is %v", PORT)
 	address := fmt.Sprintf("0.0.0.0:%v", PORT)
 	server := NewServer(address)
 
