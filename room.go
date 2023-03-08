@@ -29,6 +29,15 @@ func NewRoom(name string, creator string) *Room {
 	return &newRoom
 }
 
+func GetRoomByName(name string) (*Room, error) {
+	for _, room := range Rooms {
+		if room.Name == name {
+			return room, nil
+		}
+	}
+	return nil, fmt.Errorf("Room not found")
+}
+
 func (r *Room) String() string {
 	return fmt.Sprintf("Room: %s", r.Name)
 }

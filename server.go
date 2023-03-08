@@ -89,7 +89,8 @@ func (s *Server) readLoop(conn net.Conn) {
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
-			log.Fatal("Error reading from connection:", err)
+			fmt.Printf("Lost connection: %v\n", conn.RemoteAddr().String())
+			return
 		}
 
 		msg := string(buf[:n])
@@ -103,9 +104,8 @@ func (s *Server) readLoop(conn net.Conn) {
 			command.Handle(conn)
 		} else {
 			curr_user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
-
 			// If the user is not authenticated, we should not allow them to send
-			// messages to any rooms. This could be changed later, but for now, that's
+			// messages to any room. This could be changed later, but for now, that's
 			// the best possible behaviour I think for the sake of simplicity.
 			if err != nil {
 				conn.Write([]byte("\n[System] ::: You are not authenticated. Please log in by typing '/auth <username> <password>'.\n\n"))
@@ -120,7 +120,6 @@ func (s *Server) readLoop(conn net.Conn) {
 							"[System] ::: Please, join a room. To see all rooms, type '/rooms'.\n" +
 							"........     To create a new room, type '/newroom <name>'.\n" +
 							"........     To join an existing room, type '/join <room>'.\n\n")
-
 					conn.Write([]byte(msg))
 				} else {
 					// When a message is sent, we then need to send the message to the
