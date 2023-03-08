@@ -86,7 +86,7 @@ func HandleSignUp(username string, password string, conn net.Conn) {
 		conn.Write([]byte("\n[System] ::: Sorry, this username is already taken. Please, try with another one.\n\n"))
 	} else {
 		the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
-	
+
 		Users = append(Users, the_user)
 		conn.Write([]byte("\n[System] ::: Welcome " + username + "!\n\n"))
 	}

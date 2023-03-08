@@ -11,20 +11,20 @@ import (
 var Rooms []*Room
 
 type Room struct {
-	Name           string
-	creator        string
-	Members        []string
-	Online         []string
-	Connections    []net.Conn
-	QuitChannel    chan struct{}
+	Name        string
+	creator     string
+	Members     []string
+	Online      []string
+	Connections []net.Conn
+	QuitChannel chan struct{}
 }
 
 func NewRoom(name string, creator string) *Room {
 	newRoom := Room{
-		Name:           name,
-		creator:        creator,
-		Members:        []string{creator},
-		QuitChannel:    make(chan struct{}),
+		Name:        name,
+		creator:     creator,
+		Members:     []string{creator},
+		QuitChannel: make(chan struct{}),
 	}
 	return &newRoom
 }
