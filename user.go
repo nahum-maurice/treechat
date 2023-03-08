@@ -1,10 +1,6 @@
-package user
+package main
 
-import (
-	"fmt"
-
-	"github.com/nahum-maurice/treechat/room"
-)
+import "fmt"
 
 // This will hold all the users.
 var Users []*User
@@ -12,8 +8,8 @@ var Users []*User
 type User struct {
 	Username          string
 	Password          string
-	ConnectionAddress string     // The current connection address
-	CurrentRoom       *room.Room // A user should be in 1 room at time
+	ConnectionAddress string // The current connection address
+	CurrentRoom       *Room  // A user should be in 1 room at time
 	Rooms             []string
 	IsAuthenticated   bool
 }
@@ -41,7 +37,7 @@ func GetUserByConnectionAddress(connectionAddress string) (*User, error) {
 	return nil, fmt.Errorf("User not found")
 }
 
-func (u *User) GetCurrentRoom () (*room.Room, error) {
+func (u *User) GetCurrentRoom() (*Room, error) {
 	if u.CurrentRoom == nil {
 		return nil, fmt.Errorf("User not in a room")
 	}

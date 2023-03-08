@@ -1,13 +1,10 @@
-package commands
+package main
 
 import (
 	"fmt"
 	"log"
 	"net"
 	"strings"
-
-	"github.com/nahum-maurice/treechat/room"
-	"github.com/nahum-maurice/treechat/user"
 )
 
 type Command struct {
@@ -15,12 +12,12 @@ type Command struct {
 }
 
 const (
-	Auth    string = "auth"
-	Join    string = "join"
-	NewRoom string = "newroom"
-	Online  string = "online"
-	Quit    string = "quit"
-	Rooms   string = "rooms"
+	CAuth    string = "auth"
+	CJoin    string = "join"
+	CNewRoom string = "newroom"
+	COnline  string = "online"
+	CQuit    string = "quit"
+	CRooms   string = "rooms"
 )
 
 func NewCommand(text string) *Command {
@@ -34,24 +31,24 @@ func (c *Command) Handle(conn net.Conn) {
 	key := strings.TrimSpace(args[0])[1:]
 
 	switch key {
-	case Auth:
+	case CAuth:
 		if len(args) <= 2 {
 			conn.Write([]byte("\n[System] ::: Please provide your username and password.\n\n"))
 		} else {
 			username, password := strings.TrimSpace(args[1]), strings.TrimSpace(args[2])
 			HandleAuth(username, password, conn)
 		}
-	case Join:
+	case CJoin:
 		room_name := strings.TrimSpace(args[1])
 		HandleJoin(room_name, conn)
-	case NewRoom:
+	case CNewRoom:
 		room_name := strings.TrimSpace(args[1])
 		HandleNewRoom(room_name, conn)
-	case Online:
+	case COnline:
 		HandleOnline(conn)
-	case Quit:
+	case CQuit:
 		HandleQuit(conn)
-	case Rooms:
+	case CRooms:
 		HandleRooms(conn)
 	default:
 		conn.Write([]byte("Unknown command.\n"))
@@ -65,22 +62,22 @@ func HandleAuth(username string, password string, conn net.Conn) {
 	//
 	// Hash the password before storing it
 
-	the_user := user.NewUser(username, password, conn.RemoteAddr().String(), true)
+	the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
 
 	// Add the newly created user to the list of the other users
 	// Hint: Since all the authenticated users will be in that
 	//       slice, we can just look inside of it to check if the
 	//       user is authenticated further.
-	user.Users = append(user.Users, the_user)
+	Users = append(Users, the_user)
 	conn.Write([]byte("\n[System] ::: Welcome " + username + "! You are authenticated!\n\n"))
 }
 
 func HandleRooms(conn net.Conn) {
-	if (len(room.Rooms)) == 0 {
+	if (len(Rooms)) == 0 {
 		conn.Write([]byte("\n[System] ::: There are no rooms. To create a new room, please type '/newroom <room_name>'.\n\n"))
 	} else {
 		rooms_string := "\n[System] ::: The available rooms are: \n"
-		for _, room := range room.Rooms {
+		for _, room := range Rooms {
 			rooms_string += "........       -" + room.Name + ".\n"
 		}
 		conn.Write([]byte(rooms_string + "\n"))
@@ -88,7 +85,7 @@ func HandleRooms(conn net.Conn) {
 }
 
 func HandleNewRoom(room_name string, conn net.Conn) {
-	user, err := user.GetUserByConnectionAddress(conn.RemoteAddr().String())
+	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,8 +93,8 @@ func HandleNewRoom(room_name string, conn net.Conn) {
 	if user.IsAuthenticated {
 		// TODO: Check if the room names doesn't already exist
 
-		new_room := room.NewRoom(room_name, user.Username)
-		room.Rooms = append(room.Rooms, new_room)
+		new_room := NewRoom(room_name, user.Username)
+		Rooms = append(Rooms, new_room)
 		conn.Write([]byte("\n[System] ::: Success, now you can join by typing '/join " + new_room.Name + "'.\n\n"))
 	}
 }
@@ -107,7 +104,7 @@ func HandleOnline(conn net.Conn) {
 	// the user didn't join any room. Otherwise, it responds
 	// with the actual members that are present in the current
 	// room the user is.
-	user, err := user.GetUserByConnectionAddress(conn.RemoteAddr().String())
+	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,7 +114,7 @@ func HandleOnline(conn net.Conn) {
 	}
 
 	response := "\n[System] ::: The online users are:\n"
-	for _, room := range room.Rooms {
+	for _, room := range Rooms {
 		if room.Name == user.CurrentRoom.Name {
 			for _, usr := range room.Online {
 				response += "........     -" + usr + ".\n"
@@ -128,12 +125,12 @@ func HandleOnline(conn net.Conn) {
 }
 
 func HandleJoin(room_name string, conn net.Conn) {
-	user, err := user.GetUserByConnectionAddress(conn.RemoteAddr().String())
+	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
 		log.Fatal(err)
 	}
 	count := 0
-	for _, elem := range room.Rooms {
+	for _, elem := range Rooms {
 		// Check if the room name already exists. If yes, add the
 		// user to the list of members if he's not already there
 		// and add the user to the list of online people
@@ -159,20 +156,20 @@ func HandleJoin(room_name string, conn net.Conn) {
 
 func HandleQuit(conn net.Conn) {
 	// Remove the user from the Online channel
-	usr, err := user.GetUserByConnectionAddress(conn.RemoteAddr().String())
+	usr, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for i, elem := range user.Users {
+	for i, elem := range Users {
 		if elem == usr {
 			// Remove the user from the Online field of its last room
-			for _, a_room := range room.Rooms {
+			for _, a_room := range Rooms {
 				a_room.RemoveOnline(usr.Username)
 				a_room.RemoveConnection(conn)
 			}
 			// Remove the user from the list of users.
-			user.Users = append(user.Users[:i], user.Users[i+1:]...)
+			Users = append(Users[:i], Users[i+1:]...)
 			fmt.Printf("[System] ::: User %v left.\n", usr.Username)
 		}
 		// TODO: take necessary actions to clean after him

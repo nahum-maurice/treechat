@@ -1,30 +1,25 @@
-package server
+package main
 
 import (
 	"fmt"
 	"log"
 	"net"
 	"strings"
-
-	"github.com/nahum-maurice/treechat/commands"
-	"github.com/nahum-maurice/treechat/message"
-	"github.com/nahum-maurice/treechat/room"
-	"github.com/nahum-maurice/treechat/user"
 )
 
 type Server struct {
 	Address        string
 	Listener       net.Listener
 	QuitChannel    chan struct{}
-	Rooms          []*room.Room
-	MessageChannel chan message.Message
+	Rooms          []*Room
+	MessageChannel chan Message
 }
 
 func NewServer(address string) *Server {
 	return &Server{
 		Address:        address,
 		QuitChannel:    make(chan struct{}),
-		MessageChannel: make(chan message.Message, 10),
+		MessageChannel: make(chan Message, 10),
 	}
 }
 
@@ -103,10 +98,10 @@ func (s *Server) readLoop(conn net.Conn) {
 		// is a command, it should be handled as such. The way it's
 		// handled is defined by the commands packages.
 		if msg[0] == '/' {
-			command := commands.NewCommand(msg)
+			command := NewCommand(msg)
 			command.Handle(conn)
 		} else {
-			curr_user, err := user.GetUserByConnectionAddress(conn.RemoteAddr().String())
+			curr_user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 
 			// If the user is not authenticated, we should not allow them to send
 			// messages to any rooms. This could be changed later, but for now, that's
@@ -130,11 +125,10 @@ func (s *Server) readLoop(conn net.Conn) {
 					// When a message is sent, we then need to send the message to the
 					// room where the sender is currently present and therefore broadcast
 					// the message to the other members of the room.
-					formated_message := message.NewMessage(curr_user.Username, msg, destination_room)
+					formated_message := NewMessage(curr_user.Username, msg, destination_room)
 					s.MessageChannel <- formated_message
 				}
 			}
 		}
-
 	}
 }
