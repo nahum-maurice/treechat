@@ -63,12 +63,13 @@ func (s *Server) acceptLoop() {
 			"\n" +
 				"[System] ::: Welcome folk! You are connected to Treechat.\n" +
 				"........     Here are the commands you can use:\n" +
-				"........       /auth  <username> <password>   --> Authenticate with the server.\n" +
-				"........       /rooms                         --> Show the list of all rooms.\n" +
-				"........       /join <room>                   --> Join a room.\n" +
-				"........       /newroom <room>                --> Create a new room.\n" +
-				"........       /online                        --> Show the people that are online in a room." +
-				"........       /quit                          --> Quit the server.\n\n"))
+				"........       /signup  <username> <password>   --> Sign up to Treechat.\n" +
+				"........       /login <username> <password>    --> Login to Treechat.\n" +
+				"........       /rooms                           --> Show the list of all rooms.\n" +
+				"........       /join <room>                     --> Join a room.\n" +
+				"........       /newroom <room>                  --> Create a new room.\n" +
+				"........       /online                          --> Show the people that are online in a room.\n" +
+				"........       /quit                            --> Quit the server.\n\n"))
 
 		// Start the reading loop. This loop is responsible to listen
 		// to incomming messages, make sure it recognizes and respond
@@ -125,7 +126,7 @@ func (s *Server) readLoop(conn net.Conn) {
 					// When a message is sent, we then need to send the message to the
 					// room where the sender is currently present and therefore broadcast
 					// the message to the other members of the room.
-					formated_message := NewMessage(curr_user.Username, msg, destination_room)
+					formated_message := NewMessage(curr_user, msg, destination_room)
 					s.MessageChannel <- formated_message
 				}
 			}

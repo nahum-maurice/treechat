@@ -12,7 +12,8 @@ type Command struct {
 }
 
 const (
-	CAuth    string = "auth"
+	CLogin   string = "login"
+	CSignUp  string = "signup"
 	CJoin    string = "join"
 	CNewRoom string = "newroom"
 	COnline  string = "online"
@@ -31,12 +32,19 @@ func (c *Command) Handle(conn net.Conn) {
 	key := strings.TrimSpace(args[0])[1:]
 
 	switch key {
-	case CAuth:
+	case CSignUp:
 		if len(args) <= 2 {
 			conn.Write([]byte("\n[System] ::: Please provide your username and password.\n\n"))
 		} else {
 			username, password := strings.TrimSpace(args[1]), strings.TrimSpace(args[2])
-			HandleAuth(username, password, conn)
+			HandleSignUp(username, password, conn)
+		}
+	case CLogin:
+		if len(args) <= 2 {
+			conn.Write([]byte("\n[System] ::: Please provide your username and password.\n\n"))
+		} else {
+			username, password := strings.TrimSpace(args[1]), strings.TrimSpace(args[2])
+			HandleLogin(username, password, conn)
 		}
 	case CJoin:
 		room_name := strings.TrimSpace(args[1])
@@ -55,21 +63,33 @@ func (c *Command) Handle(conn net.Conn) {
 	}
 }
 
-func HandleAuth(username string, password string, conn net.Conn) {
-	// TODO
-	// Check whether the user exist in our database. If not,
-	// create a new user with these credentials.
-	//
-	// Hash the password before storing it
+func HandleLogin(username string, password string, conn net.Conn) {
+	is_user := IsUser(username)
+	if !is_user {
+		conn.Write([]byte("\n[System] ::: Sorry, there is no such user. To create a new account, please use '/signup <username> <password>'.\n\n"))
+	} else {
+		is_verified := VerifyUser(username, password)
+		if !is_verified {
+			conn.Write([]byte("\n[System] ::: Sorry, username/password combination don't match.\n\n"))
+		} else {
+			the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
 
-	the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
+			Users = append(Users, the_user)
+			conn.Write([]byte("\n[System] ::: Welcome back " + username + "!\n\n"))
+		}
+	}
+}
 
-	// Add the newly created user to the list of the other users
-	// Hint: Since all the authenticated users will be in that
-	//       slice, we can just look inside of it to check if the
-	//       user is authenticated further.
-	Users = append(Users, the_user)
-	conn.Write([]byte("\n[System] ::: Welcome " + username + "! You are authenticated!\n\n"))
+func HandleSignUp(username string, password string, conn net.Conn) {
+	is_user := IsUser(username)
+	if is_user {
+		conn.Write([]byte("\n[System] ::: Sorry, this username is already taken. Please, try with another one.\n\n"))
+	} else {
+		the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
+	
+		Users = append(Users, the_user)
+		conn.Write([]byte("\n[System] ::: Welcome " + username + "!\n\n"))
+	}
 }
 
 func HandleRooms(conn net.Conn) {
@@ -93,9 +113,9 @@ func HandleNewRoom(room_name string, conn net.Conn) {
 	if user.IsAuthenticated {
 		// TODO: Check if the room names doesn't already exist
 
-		new_room := NewRoom(room_name, user.Username)
-		Rooms = append(Rooms, new_room)
-		conn.Write([]byte("\n[System] ::: Success, now you can join by typing '/join " + new_room.Name + "'.\n\n"))
+		newRoom := NewRoom(room_name, user.Username)
+		Rooms = append(Rooms, newRoom)
+		conn.Write([]byte("\n[System] ::: Success, now you can join by typing '/join " + newRoom.Name + "'.\n\n"))
 	}
 }
 

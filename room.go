@@ -20,13 +20,13 @@ type Room struct {
 }
 
 func NewRoom(name string, creator string) *Room {
-	new_room := Room{
+	newRoom := Room{
 		Name:           name,
 		creator:        creator,
 		Members:        []string{creator},
 		QuitChannel:    make(chan struct{}),
 	}
-	return &new_room
+	return &newRoom
 }
 
 func (r *Room) String() string {
