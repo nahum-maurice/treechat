@@ -9,10 +9,14 @@ import (
 )
 
 func init() {
-	// Load environment variables
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("err loading: %v", err)
+	// Load environment variables if the directory contains
+	// the .env file
+	file, _ := os.Open(".env")
+	if file != nil {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatalf("err loading: %v", err)
+		}
 	}
 }
 
