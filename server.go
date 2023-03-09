@@ -90,6 +90,7 @@ func (s *Server) readLoop(conn net.Conn) {
 		n, err := conn.Read(buf)
 		if err != nil {
 			fmt.Printf("Lost connection: %v\n", conn.RemoteAddr().String())
+			fmt.Println(err)
 			return
 		}
 
