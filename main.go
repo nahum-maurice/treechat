@@ -4,7 +4,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
+
+func init() {
+	// Load environment variables
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("err loading: %v", err)
+	}
+}
 
 func main() {
 	PORT := os.Getenv("PORT")
