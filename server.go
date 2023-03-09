@@ -64,7 +64,7 @@ func (s *Server) acceptLoop() {
 				"[System] ::: Welcome folk! You are connected to Treechat.\n" +
 				"........     Here are the commands you can use:\n" +
 				"........       /signup  <username> <password>   --> Sign up to Treechat.\n" +
-				"........       /login <username> <password>    --> Login to Treechat.\n" +
+				"........       /login <username> <password>     --> Login to Treechat.\n" +
 				"........       /rooms                           --> Show the list of all rooms.\n" +
 				"........       /join <room>                     --> Join a room.\n" +
 				"........       /newroom <room>                  --> Create a new room.\n" +

@@ -10,7 +10,7 @@ Go 1.18 or higher
 ## Installation
 
 ```
-make build
+$ make build
 ```
 
 ## Container
