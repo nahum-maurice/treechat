@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/nahum-maurice/treechat/utils"
 )
 
 type Command struct {
-	Text string
+	Text      string
+	Formatter *utils.Formatter
+	Logger    *utils.Logger
 }
 
 const (
@@ -22,7 +26,10 @@ const (
 )
 
 func NewCommand(text string) *Command {
-	return &Command{Text: text}
+	return &Command{
+		Text: text,
+		Formatter: utils.NewFormatter("System"),
+	}
 }
 
 // TODO : Change return type from any to the actual constrained
@@ -34,105 +41,117 @@ func (c *Command) Handle(conn net.Conn) {
 	switch key {
 	case CSignUp:
 		if len(args) <= 2 {
-			conn.Write([]byte("\n[System] ::: Please provide your username and password.\n\n"))
+			msg := "Please provide your username and password."
+			conn.Write([]byte(c.Formatter.MessageCLI(msg, "System", "")))
 			return
 		}
 		username, password := strings.TrimSpace(args[1]), strings.TrimSpace(args[2])
-		HandleSignUp(username, password, conn)
+		HandleSignUp(c.Formatter, username, password, conn)
 	case CLogin:
 		if len(args) <= 2 {
-			conn.Write([]byte("\n[System] ::: Please provide your username and password.\n\n"))
+			msg := "Please provide your username and password."
+			conn.Write([]byte(c.Formatter.MessageCLI(msg, "System", "")))
 			return
 		}
 		username, password := strings.TrimSpace(args[1]), strings.TrimSpace(args[2])
-		HandleLogin(username, password, conn)
+		HandleLogin(c.Formatter, username, password, conn)
 	case CJoin:
 		if len(args) <= 1 {
-			conn.Write([]byte("Please provide a room name.\n\n"))
+			msg := "Please provide a room name."
+			conn.Write([]byte(c.Formatter.MessageCLI(msg, "System", "")))
 			return
 		}
 		room_name := strings.TrimSpace(args[1])
-		HandleJoin(room_name, conn)
+		HandleJoin(c.Formatter, room_name, conn)
 	case CMembers:
-		HandleMembers(conn)
+		HandleMembers(c.Formatter, conn)
 	case CNewRoom:
 		room_name := strings.TrimSpace(args[1])
-		HandleNewRoom(room_name, conn)
+		HandleNewRoom(c.Formatter, room_name, conn)
 	case COnline:
-		HandleOnline(conn)
+		HandleOnline(c.Formatter, conn)
 	case CQuit:
-		HandleQuit(conn)
+		HandleQuit(c.Formatter, conn)
 	case CRooms:
-		HandleRooms(conn)
+		HandleRooms(c.Formatter, conn)
 	default:
-		conn.Write([]byte("\n[System] ::: Unknown command.\n\n"))
+		conn.Write([]byte(c.Formatter.MessageCLI("Unknown command.", "System", "")))
 	}
 }
 
-func HandleLogin(username string, password string, conn net.Conn) {
+func HandleLogin(f *utils.Formatter, username string, password string, conn net.Conn) {
 	is_user := IsUser(username)
 	if !is_user {
-		conn.Write([]byte("\n[System] ::: Sorry, there is no such user. To create a new account, please use '/signup <username> <password>'.\n\n"))
+		msg := "Sorry, there is no such user. To create a new account, please use '/signup <username> <password>'."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 	is_verified := VerifyUser(username, password)
 
 	if !is_verified {
-		conn.Write([]byte("\n[System] ::: Sorry, username/password combination don't match.\n\n"))
+		msg := "Sorry, username/password combination don't match."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 	the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
 
 	Users = append(Users, the_user)
-	conn.Write([]byte("\n[System] ::: Welcome back " + username + "!\n\n"))
+	msg := "Welcome back " + username + "!"
+	conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 
 }
 
-func HandleSignUp(username string, password string, conn net.Conn) {
+func HandleSignUp(f *utils.Formatter, username string, password string, conn net.Conn) {
 	is_user := IsUser(username)
 	if is_user {
-		conn.Write([]byte("\n[System] ::: Sorry, this username is already taken. Please, try with another one.\n\n"))
+		msg := "Sorry, this username is already taken. Please, try with another one."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 	the_user := NewUser(username, password, conn.RemoteAddr().String(), true)
 
 	Users = append(Users, the_user)
-	conn.Write([]byte("\n[System] ::: Welcome " + username + "!\n\n"))
+	msg := "Welcome " + username + "!"
+	conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 }
 
-func HandleRooms(conn net.Conn) {
+func HandleRooms(f *utils.Formatter, conn net.Conn) {
 	if (len(Rooms)) == 0 {
-		conn.Write([]byte("\n[System] ::: There are no rooms. To create a new room, please type '/newroom <room_name>'.\n\n"))
+		msg := "There are no rooms. To create a new room, please type '/newroom <room_name>'."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
-	rooms_string := "\n[System] ::: The available rooms are: \n"
+	roomsString := f.MessagePrimaryCLI("The available rooms are:", "System", "")
 	for _, room := range Rooms {
-		rooms_string += "........       - " + room.Name + "\n"
+		roomsString +=  f.MessageSecondaryCLI(" # " + room.Name, "System", "")
 	}
-	conn.Write([]byte(rooms_string + "\n"))
+	conn.Write([]byte(roomsString + "\n"))
 }
 
-func HandleNewRoom(room_name string, conn net.Conn) {
+func HandleNewRoom(f *utils.Formatter, room_name string, conn net.Conn) {
 	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
-		conn.Write([]byte("\n[System] ::: Sorry, You are not authenticated. Please, login or signup.\n\n"))
+		msg := "Sorry, You are not authenticated. Please, login or signup."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 	if user.IsAuthenticated {
 		// TODO: Check if the room names doesn't already exist
 		a_room, _ := GetRoomByName(room_name)
 		if a_room != nil {
-			conn.Write([]byte("\n[System] ::: There is already a room with that name.\n\n"))
+			msg := "There is already a room with that name."
+			conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 			return
 		}
 
 		newRoom := NewRoom(room_name, user.Username)
 		Rooms = append(Rooms, newRoom)
-		conn.Write([]byte("\n[System] ::: Success, now you can join by typing '/join " + newRoom.Name + "'.\n\n"))
+		msg := "Success, now you can join by typing '/join " + newRoom.Name + "'"
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 	}
 }
 
-func HandleOnline(conn net.Conn) {
+func HandleOnline(f *utils.Formatter, conn net.Conn) {
 	// This function responds "You don't belong to any room" if
 	// the user didn't join any room. Otherwise, it responds
 	// with the actual members that are present in the current
@@ -140,52 +159,61 @@ func HandleOnline(conn net.Conn) {
 	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
 		// log.Fatal(err)
-		conn.Write([]byte("\n[System] ::: Sorry, You are not authenticated. Please, login or signup.\n\n"))
+		msg := "Sorry, You are not authenticated. Please, login or signup."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 
 	if user.CurrentRoom == nil {
-		conn.Write([]byte("\n[System] ::: You don't belong to any room.\n\n"))
+		msg := "You don't belong to any room."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 
-	response := "\n[System] ::: The online users are:\n"
+	response := f.MessagePrimaryCLI("The online users are:", "System", "")
 	for _, room := range Rooms {
 		if room.Name == user.CurrentRoom.Name {
 			for _, usr := range room.Online {
-				response += "........     - " + usr + "\n"
+				response += f.MessageSecondaryCLI(" @ " + usr, "System", "")
 			}
 		}
 	}
 	conn.Write([]byte(response + "\n"))
 }
 
-func HandleMembers(conn net.Conn) {
-	// This function responds "You are not a member of any room" if 
+func HandleMembers(f *utils.Formatter, conn net.Conn) {
+	// This function responds "You are not a member of any room" if
 	// the user didn't join any room. Otherwise, it responds
 	// with the actual members of a room
 	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
-		conn.Write([]byte("\n[System] ::: Sorry, You are not authenticated. Please, login or signup.\n\n"))
+		msg := "Sorry, You are not authenticated. Please, login or signup."
+		conn.Write([]byte(f.MessageCLI("@ " + msg, "System", "")))
 		return
 	}
 
 	if user.CurrentRoom == nil {
-		conn.Write([]byte("\n[System] ::: You are not a member of any room.\n\n"))
+		msg := "You are not a member of any room."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 
-	response := fmt.Sprintf("\n[System] ::: The members of the room '%v' are:\n", user.CurrentRoom.Name)
+	response := f.MessagePrimaryCLI(
+		fmt.Sprintf("The members of the room '%v' are:", user.CurrentRoom.Name),
+		"System",
+		"",
+	)
 	for _, usr := range user.CurrentRoom.Members {
-		response += "........     - " + usr + "\n"
+		response += f.MessageSecondaryCLI(" @ " + usr, "System", "")
 	}
-	conn.Write([]byte(response + "\n"))	
+	conn.Write([]byte(response + "\n"))
 }
 
-func HandleJoin(room_name string, conn net.Conn) {
+func HandleJoin(f *utils.Formatter, room_name string, conn net.Conn) {
 	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	if err != nil {
-		conn.Write([]byte("\n[System] ::: Sorry, You are not authenticated. Please, login or signup.\n\n"))
+		msg := "Sorry, You are not authenticated. Please, login or signup."
+		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
 	count := 0
@@ -201,8 +229,8 @@ func HandleJoin(room_name string, conn net.Conn) {
 			// notify everyone in the room
 			for _, connection := range elem.Connections {
 				if user.ConnectionAddress != connection.RemoteAddr().String() {
-					message := fmt.Sprintf("\n[System] ::: %s joined the room '%v'.\n\n\n", user.Username, elem.Name)
-					connection.Write([]byte(message))
+					message := fmt.Sprintf("%s joined the room '%v'.\n", user.Username, elem.Name)
+					connection.Write([]byte(f.MessageCLI(message, "System", "")))
 					break
 				}
 			}
@@ -212,18 +240,19 @@ func HandleJoin(room_name string, conn net.Conn) {
 			}
 
 			user.CurrentRoom = elem
-			conn.Write([]byte("\n[System] ::: You joined the room '" + elem.Name + "'.\n\n"))
+			msg := "You joined the room '" + elem.Name + "'."
+			conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 
 			break
 		}
 	}
 	if count == 0 {
-		conn.Write([]byte("\n[System] ::: There is no such room.\n\n"))
+		conn.Write([]byte(f.MessageCLI("There is no such room.", "System", "")))
 		return
 	}
 }
 
-func HandleQuit(conn net.Conn) {
+func HandleQuit(f *utils.Formatter, conn net.Conn) {
 	// Remove the user from the Online channel
 	usr, _ := GetUserByConnectionAddress(conn.RemoteAddr().String())
 	for _, elem := range Users {
@@ -233,15 +262,15 @@ func HandleQuit(conn net.Conn) {
 			usr.CurrentRoom.RemoveConnection(conn)
 			// notify every one from the room it was
 			for _, connection := range usr.CurrentRoom.Connections {
-				message := fmt.Sprintf("\n[System] ::: %s left the room.\n\n\n", usr.Username)
-				connection.Write([]byte(message))
+				message := fmt.Sprintf("%s left the room.\n", usr.Username)
+				connection.Write([]byte(f.MessageCLI(message, "System", "")))
 			}
 			// We don't need this (the next)
 			// Remove the user from the list of users.
 			// Users = append(Users[:i], Users[i+1:]...)
 		}
 	}
-	conn.Write([]byte("\n[System] ::: Bye!\n\n"))
+	conn.Write([]byte(f.MessageCLI("Bye!", "System", "")))
 	conn.Close()
 }
 

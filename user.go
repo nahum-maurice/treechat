@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nahum-maurice/treechat/utils"
+)
 
 // This will hold all the users.
 var Users []*User
@@ -12,16 +16,20 @@ type User struct {
 	CurrentRoom       *Room  // A user should be in 1 room at time
 	Rooms             []string
 	IsAuthenticated   bool
+	Logger            *utils.Logger
 }
 
 func NewUser(username string, password string, address string, isAuth bool) *User {
-	new_user := User{
+	new := User{
 		Username:          username,
 		Password:          password,
 		ConnectionAddress: address,
 		IsAuthenticated:   isAuth,
+		Logger:            utils.NewLogger("System"),
 	}
-	return &new_user
+	newLog := fmt.Sprintf("New user created: %s", username)
+	new.Logger.Info(newLog)
+	return &new
 }
 
 func IsUser(username string) bool {

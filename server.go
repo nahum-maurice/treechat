@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"strings"
+
+	"github.com/nahum-maurice/treechat/utils"
 )
 
 type Server struct {
@@ -13,6 +14,7 @@ type Server struct {
 	QuitChannel    chan struct{}
 	Rooms          []*Room
 	MessageChannel chan Message
+	Logger         *utils.Logger
 }
 
 func NewServer(address string) *Server {
@@ -20,17 +22,21 @@ func NewServer(address string) *Server {
 		Address:        address,
 		QuitChannel:    make(chan struct{}),
 		MessageChannel: make(chan Message, 10),
+		Logger:         utils.NewLogger("Server"),
 	}
 }
 
 func (s *Server) Start() error {
+
 	listener, err := net.Listen("tcp", s.Address)
 	if err != nil {
-		log.Fatal(err)
+		errMess := fmt.Sprint("Error while launching the server: %v", err)
+		s.Logger.Fatal(errMess)
 		return err
 	}
 
-	fmt.Printf("Treechat server up and running on address: %v\n\n", s.Address)
+	serverUpMessage := fmt.Sprintf("Treechat server up and running on address: %v", s.Address)
+	s.Logger.Info(serverUpMessage)
 
 	// When terminating, please, close the listener
 	defer listener.Close()
@@ -50,13 +56,15 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.Listener.Accept()
 		if err != nil {
-			log.Fatal("Error accepting connection:", err)
+			connErr := fmt.Sprintf("Error accepting connection: %v", err)
+			s.Logger.Error(connErr)
 			// We don't return cause we don't want to close the loop
 			// since other incomming requests may pass in
 			continue
 		}
 
-		fmt.Println("New connection to the server:", conn.RemoteAddr())
+		newConn := fmt.Sprintf("New connection to the server. Address --> %v", conn.RemoteAddr())
+		s.Logger.Info(newConn)
 
 		// First display for the user upon connection.
 		conn.Write([]byte(
@@ -89,11 +97,12 @@ func (s *Server) readLoop(conn net.Conn) {
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
-			fmt.Printf("Lost connection: %v\n", conn.RemoteAddr().String())
-			fmt.Println(err)
+			lostConn := fmt.Sprintf("Lost connection: %v", conn.RemoteAddr().String())
+			s.Logger.Info(lostConn)
 
 			// Make cleanups after the user if they were connected
-			HandleQuit(conn)
+			f := utils.NewFormatter("System")
+			HandleQuit(f, conn)
 			return
 		}
 

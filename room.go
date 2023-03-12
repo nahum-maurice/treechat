@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+
+	"github.com/nahum-maurice/treechat/utils"
 )
 
 // Will contain the existing rooms.
@@ -17,16 +19,20 @@ type Room struct {
 	Online      []string
 	Connections []net.Conn
 	QuitChannel chan struct{}
+	Logger      *utils.Logger
 }
 
 func NewRoom(name string, creator string) *Room {
-	newRoom := Room{
+	new := Room{
 		Name:        name,
 		creator:     creator,
 		Members:     []string{creator},
 		QuitChannel: make(chan struct{}),
+		Logger:      utils.NewLogger("System"),
 	}
-	return &newRoom
+	newLog := fmt.Sprintf("New room created: %s", new.Name)
+	new.Logger.Info(newLog)
+	return &new
 }
 
 func GetRoomByName(name string) (*Room, error) {
