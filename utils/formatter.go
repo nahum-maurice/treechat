@@ -25,7 +25,7 @@ func (f *Formatter) Message(msg string, owner string, sender string) string {
 
 func (f *Formatter) MessageCLI(msg string, owner string, sender string) string {
 	// [geeks]  2023/03/12 14:09:28 ::: [dellno] hey dell
-	formatted := fmt.Sprintf("\n[%v] %v ::: %v %v\n\n",
+	formatted := fmt.Sprintf("\n[%v] %v ::: [%v] %v\n\n",
 		owner,
 		time.Now().Format("2006-01-02 15:04:05"),
 		sender,

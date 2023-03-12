@@ -15,6 +15,7 @@ type Server struct {
 	Rooms          []*Room
 	MessageChannel chan Message
 	Logger         *utils.Logger
+	Formatter      *utils.Formatter
 }
 
 func NewServer(address string) *Server {
@@ -23,6 +24,7 @@ func NewServer(address string) *Server {
 		QuitChannel:    make(chan struct{}),
 		MessageChannel: make(chan Message, 10),
 		Logger:         utils.NewLogger("Server"),
+		Formatter: utils.NewFormatter("Server"),
 	}
 }
 
@@ -30,7 +32,7 @@ func (s *Server) Start() error {
 
 	listener, err := net.Listen("tcp", s.Address)
 	if err != nil {
-		errMess := fmt.Sprint("Error while launching the server: %v", err)
+		errMess := fmt.Sprintf("Error while launching the server: %v", err)
 		s.Logger.Fatal(errMess)
 		return err
 	}
@@ -140,6 +142,7 @@ func (s *Server) readLoop(conn net.Conn) {
 						// room where the sender is currently present and therefore broadcast
 						// the message to the other members of the room.
 						formated_message := NewMessage(curr_user, msg, destination_room)
+
 						s.MessageChannel <- formated_message
 					}
 				}
