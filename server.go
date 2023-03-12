@@ -24,7 +24,7 @@ func NewServer(address string) *Server {
 		QuitChannel:    make(chan struct{}),
 		MessageChannel: make(chan Message, 10),
 		Logger:         utils.NewLogger("Server"),
-		Formatter: utils.NewFormatter("Server"),
+		Formatter:      utils.NewFormatter("Server"),
 	}
 }
 
@@ -91,7 +91,6 @@ func (s *Server) acceptLoop() {
 
 func (s *Server) readLoop(conn net.Conn) {
 	defer conn.Close()
-
 	// Read the message sent by the user. The buffer has a size of
 	// 256 bytes. This limit is imposed by the server in order to
 	// prevent undesirable behaviours.
@@ -124,7 +123,7 @@ func (s *Server) readLoop(conn net.Conn) {
 				// messages to any room. This could be changed later, but for now, that's
 				// the best possible behaviour I think for the sake of simplicity.
 				if err != nil {
-					conn.Write([]byte("\n[System] ::: You are not authenticated. Please log in by typing '/auth <username> <password>'.\n\n"))
+					conn.Write([]byte("\n[System] ::: You are not authenticated. Please log in by typing '/signup <username> <password>'.\n\n"))
 				} else {
 					// If the user didn't join any room, we should neither allow them to send
 					// messages to anywhere. This could change later but for the sake of
@@ -148,6 +147,5 @@ func (s *Server) readLoop(conn net.Conn) {
 				}
 			}
 		}
-
 	}
 }

@@ -2,20 +2,22 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/nahum-maurice/treechat/utils"
 )
 
 func init() {
 	// Load environment variables if the directory contains
 	// the .env file
+	l := utils.NewLogger("System")
 	file, _ := os.Open(".env")
 	if file != nil {
 		err := godotenv.Load()
 		if err != nil {
-			log.Fatalf("err loading: %v", err)
+			msg := fmt.Sprintf("Error loading.env file: %s", err)
+			l.Fatal(msg)
 		}
 	}
 }
@@ -41,6 +43,9 @@ func main() {
 			}
 		}
 	}()
-
-	log.Fatal(server.Start())
+	
+	err := server.Start()
+	if err != nil {
+		server.Logger.Fatal("Error while starting the server...")
+	}
 }
