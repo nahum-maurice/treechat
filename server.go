@@ -91,6 +91,9 @@ func (s *Server) readLoop(conn net.Conn) {
 		if err != nil {
 			fmt.Printf("Lost connection: %v\n", conn.RemoteAddr().String())
 			fmt.Println(err)
+
+			// Make cleanups after the user if they were connected
+			HandleQuit(conn)
 			return
 		}
 

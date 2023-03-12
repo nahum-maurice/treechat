@@ -226,7 +226,7 @@ func HandleJoin(room_name string, conn net.Conn) {
 func HandleQuit(conn net.Conn) {
 	// Remove the user from the Online channel
 	usr, _ := GetUserByConnectionAddress(conn.RemoteAddr().String())
-	for i, elem := range Users {
+	for _, elem := range Users {
 		if elem == usr {
 			// Remove the user from the Online field of its last room
 			usr.CurrentRoom.RemoveOnline(usr.Username)
@@ -236,8 +236,9 @@ func HandleQuit(conn net.Conn) {
 				message := fmt.Sprintf("\n[System] ::: %s left the room.\n\n\n", usr.Username)
 				connection.Write([]byte(message))
 			}
+			// We don't need this (the next)
 			// Remove the user from the list of users.
-			Users = append(Users[:i], Users[i+1:]...)
+			// Users = append(Users[:i], Users[i+1:]...)
 		}
 	}
 	conn.Write([]byte("\n[System] ::: Bye!\n\n"))
