@@ -14,6 +14,7 @@ const (
 	CLogin   string = "login"
 	CSignUp  string = "signup"
 	CJoin    string = "join"
+	CMembers string = "members"
 	CNewRoom string = "newroom"
 	COnline  string = "online"
 	CQuit    string = "quit"
@@ -46,8 +47,14 @@ func (c *Command) Handle(conn net.Conn) {
 		username, password := strings.TrimSpace(args[1]), strings.TrimSpace(args[2])
 		HandleLogin(username, password, conn)
 	case CJoin:
+		if len(args) <= 1 {
+			conn.Write([]byte("Please provide a room name.\n\n"))
+			return
+		}
 		room_name := strings.TrimSpace(args[1])
 		HandleJoin(room_name, conn)
+	case CMembers:
+		HandleMembers(conn)
 	case CNewRoom:
 		room_name := strings.TrimSpace(args[1])
 		HandleNewRoom(room_name, conn)
@@ -100,7 +107,7 @@ func HandleRooms(conn net.Conn) {
 	}
 	rooms_string := "\n[System] ::: The available rooms are: \n"
 	for _, room := range Rooms {
-		rooms_string += "........       -" + room.Name + "\n"
+		rooms_string += "........       - " + room.Name + "\n"
 	}
 	conn.Write([]byte(rooms_string + "\n"))
 }
@@ -146,11 +153,33 @@ func HandleOnline(conn net.Conn) {
 	for _, room := range Rooms {
 		if room.Name == user.CurrentRoom.Name {
 			for _, usr := range room.Online {
-				response += "........     -" + usr + "\n"
+				response += "........     - " + usr + "\n"
 			}
 		}
 	}
 	conn.Write([]byte(response + "\n"))
+}
+
+func HandleMembers(conn net.Conn) {
+	// This function responds "You are not a member of any room" if 
+	// the user didn't join any room. Otherwise, it responds
+	// with the actual members of a room
+	user, err := GetUserByConnectionAddress(conn.RemoteAddr().String())
+	if err != nil {
+		conn.Write([]byte("\n[System] ::: Sorry, You are not authenticated. Please, login or signup.\n\n"))
+		return
+	}
+
+	if user.CurrentRoom == nil {
+		conn.Write([]byte("\n[System] ::: You are not a member of any room.\n\n"))
+		return
+	}
+
+	response := fmt.Sprintf("\n[System] ::: The members of the room '%v' are:\n", user.CurrentRoom.Name)
+	for _, usr := range user.CurrentRoom.Members {
+		response += "........     - " + usr + "\n"
+	}
+	conn.Write([]byte(response + "\n"))	
 }
 
 func HandleJoin(room_name string, conn net.Conn) {
@@ -174,6 +203,7 @@ func HandleJoin(room_name string, conn net.Conn) {
 				if user.ConnectionAddress != connection.RemoteAddr().String() {
 					message := fmt.Sprintf("\n[System] ::: %s joined the room '%v'.\n\n\n", user.Username, elem.Name)
 					connection.Write([]byte(message))
+					break
 				}
 			}
 
@@ -188,7 +218,8 @@ func HandleJoin(room_name string, conn net.Conn) {
 		}
 	}
 	if count == 0 {
-		conn.Write([]byte("\n[System] ::: There is no such room."))
+		conn.Write([]byte("\n[System] ::: There is no such room.\n\n"))
+		return
 	}
 }
 
