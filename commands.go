@@ -82,7 +82,7 @@ func (c *Command) Handle(conn net.Conn) {
 func HandleLogin(f *utils.Formatter, username string, password string, conn net.Conn) {
 	is_user := IsUser(username)
 	if !is_user {
-		msg := "Sorry, there is no such user. To create a new account, please use '/signup <username> <password>'."
+		msg := "There is no such user. To create a new account, use '/signup <username> <password>'."
 		conn.Write([]byte(f.MessageCLI(msg, "System", "")))
 		return
 	}
