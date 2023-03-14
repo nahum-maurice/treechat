@@ -2,61 +2,46 @@ package utils
 
 import (
 	"fmt"
-	"time"
 )
 
 type Logger struct {
-	owner string
+	owner     string
+	formatter *Formatter
 }
 
 func NewLogger(owner string) *Logger {
-	return &Logger{owner: owner}
+	return &Logger{
+		owner: owner, 
+		formatter: NewFormatter("System"),
+	}
 }
 
 func (l *Logger) Trace(s string) {
-	formatted := fmt.Sprintf("[%v] %v TRACE ::: %v",
-		l.owner,
-		time.Now().Format("2006/01/02 15:04:05"),
-		s)
+	formatted := l.formatter.Log(s, "TRACE")
 	fmt.Println(formatted)
 }
 
 func (l *Logger) Debug(s string) {
-	formatted := fmt.Sprintf("[%v] %v DEBUG ::: %v",
-		l.owner,
-		time.Now().Format("2006/01/02 15:04:05"),
-		s)
+	formatted := l.formatter.Log(s, "DEBUG")
 	fmt.Println(formatted)
 }
 
 func (l *Logger) Info(s string) {
-	formatted := fmt.Sprintf("[%v] %v INFO ::: %v",
-		l.owner,
-		time.Now().Format("2006/01/02 15:04:05"),
-		s)
+	formatted := l.formatter.Log(s, "INFO")
 	fmt.Println(formatted)
 }
 
 func (l *Logger) Warn(s string) {
-	formatted := fmt.Sprintf("[%v] %v WARNING ::: %v",
-		l.owner,
-		time.Now().Format("2006/01/02 15:04:05"),
-		s)
+	formatted := l.formatter.Log(s, "WARNING")
 	fmt.Println(formatted)
 }
 
 func (l *Logger) Error(s string) {
-	formatted := fmt.Sprintf("[%v] %v ERROR ::: %v",
-		l.owner,
-		time.Now().Format("2006/01/02 15:04:05"),
-		s)
+	formatted := l.formatter.Log(s, "ERROR")
 	fmt.Println(formatted)
 }
 
 func (l *Logger) Fatal(s string) {
-	formatted := fmt.Sprintf("[%v] %v FATAL ::: %v",
-		l.owner,
-		time.Now().Format("2006/01/02 15:04:05"),
-		s)
+	formatted := l.formatter.Log(s, "FATAL")
 	fmt.Println(formatted)
 }
